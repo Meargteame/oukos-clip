@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — oukos clip</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <div class="titlebar-pad"></div>
+
+  <div class="settings-container">
+    <header class="settings-header">
+      <h1>Settings</h1>
+      <button class="close-btn" id="closeBtn" title="Close">&times;</button>
+    </header>
+
+    <div class="settings-body">
+
+      <!-- API Section -->
+      <section class="section">
+        <h2 class="section-title">API</h2>
+
+        <div class="field">
+          <label for="geminiApiKey">Gemini API Key</label>
+          <div class="input-row">
+            <input type="password" id="geminiApiKey" placeholder="Enter your API key" autocomplete="off">
+            <button type="button" class="icon-btn" id="toggleApiKey" title="Show / Hide">
+              <span id="eyeIcon">👁</span>
+            </button>
+          </div>
+          <span class="helper">Get a key at <a href="#" id="apiKeyLink">aistudio.google.com/apikey</a></span>
+        </div>
+
+        <div class="field">
+          <label for="geminiModel">Gemini Model</label>
+          <input type="text" id="geminiModel" placeholder="gemini-flash-latest">
+          <span class="helper">Common models: gemini-flash-latest, gemini-2.5-flash, gemini-2.5-pro</span>
+        </div>
+      </section>
+
+      <!-- Clip Settings Section -->
+      <section class="section">
+        <h2 class="section-title">Clip Settings</h2>
+
+        <div class="field">
+          <label for="clipsPerVideo">Clips per video</label>
+          <input type="number" id="clipsPerVideo" min="1" max="20" value="5">
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="minClipSeconds">Min clip length</label>
+            <div class="input-unit">
+              <input type="number" id="minClipSeconds" min="5" max="120" value="20">
+              <span class="unit">seconds</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="maxClipSeconds">Max clip length</label>
+            <div class="input-unit">
+              <input type="number" id="maxClipSeconds" min="10" max="300" value="75">
+              <span class="unit">seconds</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="outputHeight">Output resolution</label>
+          <select id="outputHeight">
+            <option value="1280">720×1280 (Fast)</option>
+            <option value="1920">1080×1920 (Slower)</option>
+          </select>
+        </div>
+
+        <div class="field toggle-field">
+          <label for="burnCaptions">Burn captions</label>
+          <label class="toggle">
+            <input type="checkbox" id="burnCaptions" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="field">
+          <label for="captionLanguage">Caption language</label>
+          <input type="text" id="captionLanguage" placeholder="auto (video's language)">
+        </div>
+
+        <div class="field">
+          <label for="reframe">Reframe mode</label>
+          <select id="reframe">
+            <option value="auto">Auto (follow faces)</option>
+            <option value="center">Center crop</option>
+            <option value="fit">Fit (full frame)</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Output Section -->
+      <section class="section">
+        <h2 class="section-title">Output</h2>
+
+        <div class="field">
+          <label for="outputDir">Output folder</label>
+          <div class="input-row">
+            <input type="text" id="outputDir" readonly placeholder="Default output folder">
+            <button type="button" class="btn-secondary btn-sm" id="browseBtn">Browse</button>
+          </div>
+        </div>
+
+        <button type="button" class="btn-secondary" id="openFolderBtn">Open output folder</button>
+      </section>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="settings-footer">
+      <span class="status-msg" id="statusMsg"></span>
+      <div class="footer-actions">
+        <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+        <button type="button" class="btn-primary" id="saveBtn">Save</button>
+      </div>
+    </footer>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+</html>

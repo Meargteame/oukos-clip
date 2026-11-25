@@ -1,0 +1,56 @@
+{
+  "name": "oukos-clip-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Electron desktop wrapper for oukos-clip.",
+  "author": "oukos",
+  "main": "main.js",
+  "scripts": {
+    "build:backend": "node scripts/build-backend.mjs",
+    "start": "npm run build:backend && electron .",
+    "dev": "npm run build:backend && electron . --dev",
+    "build": "npm run build:backend && electron-builder --win",
+    "build:zip": "npm run build:backend && electron-builder --win zip"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.0"
+  },
+  "dependencies": {
+    "onnxruntime-node": "^1.31.1"
+  },
+  "build": {
+    "appId": "com.oukos.clip",
+    "productName": "oukos clip",
+    "asar": false,
+    "electronDist": "node_modules/electron/dist",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "settings.html",
+      "settings.css",
+      "settings.js",
+      "assets/**",
+      "backend/**",
+      "!node_modules/onnxruntime-node/bin/napi-v*/{linux,darwin}/**"
+    ],
+    "extraResources": [
+      { "from": "../public", "to": "public", "filter": ["**/*"] },
+      { "from": "../models", "to": "models", "filter": ["**/*"] },
+      { "from": "bin", "to": "bin", "filter": ["*.exe"] }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "oukos clip"
+    }
+  }
+}

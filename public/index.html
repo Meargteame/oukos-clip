@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>oukos clip — Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <!-- Top draggable titlebar overlay for Electron -->
+    <div class="window-titlebar">
+      <div class="titlebar-drag-region">
+        <div class="window-brand">
+          <span class="window-dot"></span>
+          <span>oukos clip</span>
+          <span class="window-badge">studio</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Studio App Layout -->
+    <div class="app-layout">
+      <!-- Left Navigation Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-top">
+          <div class="brand-logo">
+            <div class="logo-mark">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 6C4 4.89543 4.89543 4 6 4H18C19.1046 4 20 4.89543 20 6V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V6Z" stroke="#ffffff" stroke-width="2"/>
+                <path d="M10 8.5L15.5 12L10 15.5V8.5Z" fill="#cce843"/>
+              </svg>
+            </div>
+            <div class="brand-text">
+              <span class="brand-name">oukos</span>
+              <span class="brand-suffix">clip</span>
+            </div>
+          </div>
+
+          <nav class="sidebar-nav">
+            <button class="nav-item active" data-view="studio">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+              <span>Studio</span>
+            </button>
+
+            <button class="nav-item" data-view="review">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/>
+                <line x1="7" y1="2" x2="7" y2="22"/>
+                <line x1="17" y1="2" x2="17" y2="22"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <line x1="2" y1="7" x2="7" y2="7"/>
+                <line x1="2" y1="17" x2="7" y2="17"/>
+                <line x1="17" y1="17" x2="22" y2="17"/>
+                <line x1="17" y1="7" x2="22" y2="7"/>
+              </svg>
+              <span>Review Clips</span>
+              <span class="nav-counter" id="nav-count-review">0</span>
+            </button>
+
+            <button class="nav-item" data-view="library">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+              <span>Library</span>
+              <span class="nav-counter subtle" id="nav-count-kept">0</span>
+            </button>
+
+            <button class="nav-item" data-view="analytics">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+              <span>Cost & Stats</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Sidebar Bottom Footer -->
+        <div class="sidebar-bottom">
+          <button class="sidebar-settings-btn" id="open-settings-btn">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <span>Engine Settings</span>
+          </button>
+
+          <div class="sidebar-health-card">
+            <div class="health-header">
+              <span class="health-title">System Status</span>
+              <span class="health-spend" id="sidebar-spend">$0.00</span>
+            </div>
+            <div class="health-pills" id="health-pills">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Canvas -->
+      <main class="main-canvas">
+        <!-- VIEW 1: STUDIO (HERO & ENGINE PIPELINE) -->
+        <section class="view-panel active" id="view-studio">
+          <!-- Announcement Banner -->
+          <div class="announcement-bar">
+            <span class="announcement-pill">v2.0 Desktop</span>
+            <span class="announcement-text">Hardware-accelerated AI video reframe with live word karaoke captions</span>
+          </div>
+
+          <!-- Hero Section with OpusClip Style -->
+          <div class="hero-section">
+            <div class="hero-badge">
+              <span class="badge-dot"></span>
+              <span>AI Highlight Clipper</span>
+            </div>
+            <h1 class="hero-title">
+              Turn any footage into <br/>
+              <span class="title-highlight">viral shorts</span> 10x faster
+            </h1>
+            <p class="hero-subtitle">
+              Paste YouTube links to detect highest-retention hooks, auto-reframe speakers to 9:16,
+              and burn styled karaoke captions ready for TikTok, Reels & Shorts.
+            </p>
+
+            <!-- Actionable Hero Upload Bar -->
+            <div class="upload-bar-container">
+              <form id="hero-add-form" class="upload-bar">
+                <div class="upload-bar-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  id="hero-url-input"
+                  class="upload-input"
+                  placeholder="Paste YouTube video or podcast link..."
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <div class="upload-bar-actions">
+                  <button type="button" class="btn-batch-toggle" id="batch-toggle-btn" title="Batch URLs mode">
+                    <span>Batch</span>
+                  </button>
+                  <button type="submit" class="btn-primary-action">
+                    <span>Get Clips</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                      <polyline points="12 5 19 12 12 19"/>
+                    </svg>
+                  </button>
+                </div>
+              </form>
+
+              <!-- Expandable Batch Form -->
+              <div class="batch-tray" id="batch-tray" hidden>
+                <div class="batch-tray-inner">
+                  <label for="batch-urls-input" class="batch-label">Batch YouTube Links (one URL per line):</label>
+                  <textarea
+                    id="batch-urls-input"
+                    rows="4"
+                    class="batch-textarea"
+                    placeholder="https://www.youtube.com/watch?v=...&#10;https://youtu.be/...&#10;https://www.youtube.com/watch?v=..."
+                  ></textarea>
+                  <div class="batch-actions">
+                    <span class="batch-hint">Queued videos process sequentially in the background.</span>
+                    <button type="button" class="btn-secondary" id="batch-cancel-btn">Close</button>
+                    <button type="button" class="btn-primary" id="batch-submit-btn">Queue Batch</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Presets Row -->
+              <div class="presets-row">
+                <div class="preset-item">
+                  <span class="preset-label">Aspect:</span>
+                  <span class="preset-val">9:16 Vertical</span>
+                </div>
+                <div class="preset-divider">•</div>
+                <div class="preset-item">
+                  <span class="preset-label">Resolution:</span>
+                  <span class="preset-val" id="preset-res">720×1280</span>
+                </div>
+                <div class="preset-divider">•</div>
+                <div class="preset-item">
+                  <span class="preset-label">Captions:</span>
+                  <span class="preset-val" id="preset-captions">Burned-In</span>
+                </div>
+                <div class="preset-divider">•</div>
+                <div class="preset-item">
+                  <span class="preset-label">Reframe:</span>
+                  <span class="preset-val" id="preset-reframe">Auto Face-Track</span>
+                </div>
+                <div class="preset-divider">•</div>
+                <button type="button" class="preset-edit-link" id="preset-edit-btn">Change in Settings</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Pipeline Engine Status Widget -->
+          <div class="pipeline-section" id="pipeline-section" hidden>
+            <div class="section-header-row">
+              <div class="section-title-wrap">
+                <span class="pipeline-pulse-dot"></span>
+                <h3 class="section-title">Active Processing Engine</h3>
+              </div>
+              <span class="pipeline-job-title" id="pipeline-job-name">Processing video...</span>
+            </div>
+
+            <div class="pipeline-steps-card">
+              <div class="pipeline-step" id="p-step-fetch">
+                <div class="step-num">1</div>
+                <div class="step-info">
+                  <div class="step-name">Stream Ingest</div>
+                  <div class="step-desc">yt-dlp metadata</div>
+                </div>
+              </div>
+              <div class="step-arrow">→</div>
+              <div class="pipeline-step" id="p-step-transcript">
+                <div class="step-num">2</div>
+                <div class="step-info">
+                  <div class="step-name">Transcript</div>
+                  <div class="step-desc">Timed words</div>
+                </div>
+              </div>
+              <div class="step-arrow">→</div>
+              <div class="pipeline-step" id="p-step-ai">
+                <div class="step-num">3</div>
+                <div class="step-info">
+                  <div class="step-name">Gemini AI</div>
+                  <div class="step-desc">Viral hooks</div>
+                </div>
+              </div>
+              <div class="step-arrow">→</div>
+              <div class="pipeline-step" id="p-step-render">
+                <div class="step-num">4</div>
+                <div class="step-info">
+                  <div class="step-name">FFmpeg Render</div>
+                  <div class="step-desc">Reframe & Captions</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Video Queue & Recent Processing Carousel -->
+          <div class="studio-queue-section">
+            <div class="section-header-row">
+              <h2 class="section-title">Video Queue</h2>
+              <div class="queue-actions">
+                <span class="queue-stat" id="studio-queue-count">0 items</span>
+              </div>
+            </div>
+            <div id="studio-jobs-list" class="jobs-list">
+              <!-- Rendered via JS -->
+            </div>
+            <div id="studio-empty" class="empty-state" hidden>
+              <div class="empty-icon">🎬</div>
+              <div class="empty-title">Ready for your first video</div>
+              <div class="empty-desc">Paste a YouTube link above to automatically generate 9:16 vertical clips.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 2: REVIEW CLIPS STUDIO -->
+        <section class="view-panel" id="view-review">
+          <div class="review-header">
+            <div>
+              <h1 class="view-title">Review Clips</h1>
+              <p class="view-subtitle">Inspect generated shorts, check viral scores, and keep the best moments.</p>
+            </div>
+            <div class="review-header-actions">
+              <div class="tabs-segmented" id="review-filter-tabs">
+                <button class="seg-btn active" data-filter="review">
+                  To Review <b id="count-review">0</b>
+                </button>
+                <button class="seg-btn" data-filter="kept">
+                  Kept <b id="count-kept">0</b>
+                </button>
+                <button class="seg-btn" data-filter="all">
+                  All Videos <b id="count-all">0</b>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Output Folder Bar -->
+          <div class="output-banner">
+            <div class="output-banner-left">
+              <span class="output-folder-icon">📁</span>
+              <span class="output-folder-text" id="output-hint">Kept clips are exported to your output folder</span>
+            </div>
+            <button type="button" class="btn-secondary btn-sm" id="btn-open-explorer">Open in Explorer</button>
+          </div>
+
+          <!-- Main Clips Container -->
+          <div id="review-jobs-container" class="jobs-container">
+            <!-- Jobs & Clips dynamically injected -->
+          </div>
+
+          <div id="review-empty" class="empty-state" hidden>
+            <div class="empty-icon">✨</div>
+            <div class="empty-title">No clips in this view</div>
+            <div class="empty-desc">Process a video in Studio to review vertical clips here.</div>
+          </div>
+        </section>
+
+        <!-- VIEW 3: LIBRARY (KEPT CLIPS) -->
+        <section class="view-panel" id="view-library">
+          <div class="review-header">
+            <div>
+              <h1 class="view-title">Export Library</h1>
+              <p class="view-subtitle">All your kept short-form clips saved on your local machine.</p>
+            </div>
+            <button type="button" class="btn-primary btn-sm" id="library-open-folder-btn">
+              <span>Open Output Folder</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+            </button>
+          </div>
+
+          <div id="library-grid" class="library-grid">
+            <!-- Populated via JS -->
+          </div>
+
+          <div id="library-empty" class="empty-state" hidden>
+            <div class="empty-icon">📁</div>
+            <div class="empty-title">No kept clips yet</div>
+            <div class="empty-desc">Click "Keep" on clips in the Review tab to export them here.</div>
+          </div>
+        </section>
+
+        <!-- VIEW 4: ANALYTICS & SPEND -->
+        <section class="view-panel" id="view-analytics">
+          <div class="review-header">
+            <div>
+              <h1 class="view-title">Cost & Engine Intelligence</h1>
+              <p class="view-subtitle">Live Gemini API token metrics and estimated spend for highlight detection.</p>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-label">Today's Spend</div>
+              <div class="metric-value" id="metric-today-spend">$0.00</div>
+              <div class="metric-sub" id="metric-today-calls">0 AI calls</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">7-Day Spend</div>
+              <div class="metric-value" id="metric-7d-spend">$0.00</div>
+              <div class="metric-sub" id="metric-7d-calls">Past week</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Active Model</div>
+              <div class="metric-value code-font" id="metric-model">gemini-flash</div>
+              <div class="metric-sub" id="metric-pricing">$0.30 in / $2.50 out / M</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Tokens Processed Today</div>
+              <div class="metric-value" id="metric-tokens">0</div>
+              <div class="metric-sub" id="metric-tokens-sub">0 in · 0 out</div>
+            </div>
+          </div>
+
+          <div class="analytics-card">
+            <h3 class="card-subtitle">Usage Breakdown by Day</h3>
+            <div class="table-wrap">
+              <table class="analytics-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>AI Calls</th>
+                    <th>Input Tokens</th>
+                    <th>Output Tokens</th>
+                    <th>Estimated Cost</th>
+                  </tr>
+                </thead>
+                <tbody id="analytics-table-body">
+                  <!-- Populated via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Notification Toast Element -->
+    <div class="notification-toast" id="app-toast"></div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
