@@ -4,6 +4,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>oukos clip — Studio</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Crect x='2' y='2' width='20' height='20' rx='5' fill='%23000000' stroke='%23374151' stroke-width='2'/%3E%3Cpath d='M9.5 7.5L16.5 12L9.5 16.5V7.5Z' fill='%23cce843'/%3E%3C/svg%3E"
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -13,7 +18,7 @@
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
-    <!-- Top draggable titlebar overlay for Electron -->
+    <!-- Top draggable titlebar overlay (visible only in Electron) -->
     <div class="window-titlebar">
       <div class="titlebar-drag-region">
         <div class="window-brand">
@@ -24,10 +29,26 @@
       </div>
     </div>
 
+    <!-- Mobile header bar (visible on narrow viewports) -->
+    <header class="mobile-header">
+      <button type="button" class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Open navigation">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <div class="mobile-brand">
+        <span class="brand-name">oukos</span><span class="brand-suffix">clip</span>
+      </div>
+      <span class="mobile-spend" id="mobile-spend">$0.00</span>
+    </header>
+    <div class="sidebar-backdrop" id="sidebar-backdrop" hidden></div>
+
     <!-- Main Studio App Layout -->
     <div class="app-layout">
       <!-- Left Navigation Sidebar -->
-      <aside class="sidebar">
+      <aside class="sidebar" id="sidebar">
         <div class="sidebar-top">
           <div class="brand-logo">
             <div class="logo-mark">
@@ -108,6 +129,10 @@
 
       <!-- Main Canvas -->
       <main class="main-canvas">
+        <div class="connection-banner" id="connection-banner" hidden>
+          <span class="connection-text">Connection lost to local server. Reconnecting…</span>
+          <button type="button" class="btn-secondary btn-sm" id="connection-retry-btn">Retry now</button>
+        </div>
         <!-- VIEW 1: STUDIO (HERO & ENGINE PIPELINE) -->
         <section class="view-panel active" id="view-studio">
           <!-- Announcement Banner -->
@@ -400,8 +425,49 @@
       </main>
     </div>
 
+    <!-- In-App Confirmation Modal -->
+    <div class="modal-backdrop" id="confirm-modal" hidden role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <div class="modal-card modal-card-sm">
+        <div class="modal-header">
+          <h2 class="modal-title" id="confirm-title">Confirm Action</h2>
+          <button type="button" class="modal-close" id="confirm-close-btn" aria-label="Close">&times;</button>
+        </div>
+        <p class="modal-body-text" id="confirm-message"></p>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="confirm-cancel-btn">Cancel</button>
+          <button type="button" class="btn-danger" id="confirm-ok-btn">Remove</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Web Mode Engine Configuration Modal -->
+    <div class="modal-backdrop" id="web-settings-modal" hidden role="dialog" aria-modal="true" aria-labelledby="web-settings-title">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div>
+            <h2 class="modal-title" id="web-settings-title">Engine Configuration</h2>
+            <p class="modal-subtitle">Live settings loaded from your local server environment (<code class="code-inline">.env</code>).</p>
+          </div>
+          <button type="button" class="modal-close" id="web-settings-close-btn" aria-label="Close">&times;</button>
+        </div>
+        <div class="settings-summary-grid" id="web-settings-grid">
+          <!-- Populated via JS -->
+        </div>
+        <div class="env-hint-box">
+          <div class="env-hint-title">Update in CLI / Web Mode</div>
+          <p class="env-hint-desc">Edit <code class="code-inline">.env</code> in your project folder and restart <code class="code-inline">npm start</code> to apply changes.</p>
+          <pre class="env-snippet" id="web-env-snippet"></pre>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="web-settings-copy-btn">Copy .env Template</button>
+          <button type="button" class="btn-secondary" id="web-settings-refresh-btn">Refresh Status</button>
+          <button type="button" class="btn-primary" id="web-settings-done-btn">Done</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Notification Toast Element -->
-    <div class="notification-toast" id="app-toast"></div>
+    <div class="notification-toast" id="app-toast" role="status" aria-live="polite"></div>
 
     <script type="module" src="/app.js"></script>
   </body>

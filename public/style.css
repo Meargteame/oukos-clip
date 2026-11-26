@@ -111,18 +111,22 @@ a {
 }
 
 /* --------------------------------------------------------------------------
-   Window Titlebar (Electron overlay region)
+   Window Titlebar (Electron overlay region — hidden in browser mode)
    -------------------------------------------------------------------------- */
 .window-titlebar {
   height: 38px;
   width: 100%;
   background: var(--color-brand-satin-deep-black);
   border-bottom: 1px solid var(--color-border);
-  display: flex;
+  display: none;
   align-items: center;
   position: relative;
   z-index: 100;
   -webkit-app-region: drag;
+}
+
+body.electron .window-titlebar {
+  display: flex;
 }
 
 .titlebar-drag-region {
@@ -161,14 +165,63 @@ a {
 }
 
 /* --------------------------------------------------------------------------
+   Mobile Header & Drawer Backdrop
+   -------------------------------------------------------------------------- */
+.mobile-header {
+  display: none;
+  height: 48px;
+  width: 100%;
+  background: var(--color-brand-satin-deep-black);
+  border-bottom: 1px solid var(--color-border);
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  z-index: 90;
+}
+
+.mobile-menu-btn {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  color: var(--color-primary);
+}
+
+.mobile-brand {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.mobile-spend {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-tertiary);
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  z-index: 190;
+}
+
+/* --------------------------------------------------------------------------
    App Layout Shell
    -------------------------------------------------------------------------- */
 .app-layout {
   display: flex;
-  height: calc(100vh - 38px);
+  height: 100vh;
   width: 100vw;
   background: var(--color-surface);
   overflow: hidden;
+}
+
+body.electron .app-layout {
+  height: calc(100vh - 38px);
 }
 
 /* --------------------------------------------------------------------------
@@ -1353,12 +1406,222 @@ a {
 }
 
 /* --------------------------------------------------------------------------
+   Connection Status Banner
+   -------------------------------------------------------------------------- */
+.connection-banner {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px;
+  background: var(--color-brand-satin-deep-black);
+  border-bottom: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-bad);
+  font-size: 13px;
+  color: #ffb3b3;
+}
+
+.connection-banner[hidden],
+.modal-backdrop[hidden],
+.sidebar-backdrop[hidden] {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   Modals (Confirm & Web Engine Configuration)
+   -------------------------------------------------------------------------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 620px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  background: var(--color-brand-satin-deep-black);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.modal-card-sm {
+  max-width: 440px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.modal-title {
+  font-size: var(--text-headline-xs-size);
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.modal-subtitle {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--color-secondary);
+}
+
+.modal-close {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  color: var(--color-brand-cerebellum-grey);
+  font-size: 18px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.modal-close:hover {
+  color: var(--color-primary);
+  border-color: #555e6d;
+}
+
+.modal-body-text {
+  font-size: 14px;
+  color: var(--color-brand-cerebellum-grey);
+  line-height: 1.5;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.btn-danger {
+  height: var(--control-height);
+  background: var(--color-bad);
+  color: #000000;
+  border-radius: var(--radius-md);
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s ease;
+}
+
+.btn-danger:hover {
+  opacity: 0.9;
+}
+
+.settings-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.settings-kv {
+  background: #000000;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.settings-kv.full {
+  grid-column: 1 / -1;
+}
+
+.settings-kv-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-secondary);
+}
+
+.settings-kv-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+  word-break: break-word;
+}
+
+.settings-kv-val.ok { color: var(--color-good); }
+.settings-kv-val.missing { color: var(--color-bad); }
+
+.env-hint-box {
+  background: #000000;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.env-hint-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-tertiary);
+}
+
+.env-hint-desc {
+  font-size: 12px;
+  color: var(--color-brand-cerebellum-grey);
+}
+
+.env-snippet {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--color-brand-cerebellum-grey);
+  background: var(--color-brand-satin-deep-black);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.code-inline {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #000000;
+  border: 1px solid var(--color-border);
+  color: var(--color-primary);
+}
+
+/* --------------------------------------------------------------------------
    Notification Toast
    -------------------------------------------------------------------------- */
 .notification-toast {
   position: fixed;
   bottom: 24px;
   right: 24px;
+  max-width: calc(100vw - 32px);
   z-index: 9999;
   background: var(--color-brand-satin-deep-black);
   color: var(--color-primary);
@@ -1374,6 +1637,15 @@ a {
   pointer-events: none;
 }
 
+.notification-toast.error {
+  border-left-color: var(--color-bad);
+  color: #ffb3b3;
+}
+
+.notification-toast.success {
+  border-left-color: var(--color-good);
+}
+
 .notification-toast.show {
   transform: translateX(0);
   opacity: 1;
@@ -1383,6 +1655,140 @@ a {
 .notification-toast.hide {
   transform: translateX(120%);
   opacity: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints (Web & Narrow Viewports)
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .mobile-header {
+    display: flex;
+  }
+
+  .app-layout {
+    height: calc(100vh - 48px);
+  }
+
+  body.electron .app-layout {
+    height: calc(100vh - 86px);
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 48px;
+    left: 0;
+    bottom: 0;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    overflow-y: auto;
+  }
+
+  body.electron .sidebar {
+    top: 86px;
+  }
+
+  body.sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+
+  .view-panel {
+    padding: 20px 16px 48px;
+  }
+
+  .hero-title {
+    font-size: clamp(28px, 7vw, 44px);
+  }
+
+  .review-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tabs-segmented {
+    overflow-x: auto;
+  }
+
+  .output-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .section-header-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .pipeline-steps-card {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .step-arrow {
+    display: none;
+  }
+
+  .job-head {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .job-actions {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .upload-bar {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .upload-bar-icon {
+    margin-right: 4px;
+  }
+
+  .upload-input {
+    min-width: 0;
+    height: 36px;
+  }
+
+  .upload-bar-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .batch-actions {
+    flex-wrap: wrap;
+  }
+
+  .settings-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .clips {
+    grid-template-columns: 1fr;
+    padding: 0 12px 14px;
+  }
+
+  .library-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .notification-toast {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
 }
 
 /* --------------------------------------------------------------------------

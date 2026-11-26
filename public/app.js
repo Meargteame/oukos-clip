@@ -9,6 +9,9 @@ const ACTIVE_STATUSES = new Set(["fetching", "transcribing", "picking", "renderi
 
 // Electron detection
 const isElectron = Boolean(window.electronAPI?.isElectron);
+if (isElectron) {
+  document.body.classList.add("electron");
+}
 
 let currentView = "studio";
 let currentReviewFilter = "review";
@@ -16,10 +19,11 @@ let jobs = [];
 let healthData = null;
 let usageData = null;
 
-// Node caches to prevent <video> recreation during polling intervals
+// Node caches to prevent <video> / card recreation during polling intervals
 const studioJobEls = new Map();
 const reviewJobEls = new Map();
 const clipEls = new Map();
+const libraryCardEls = new Map();
 
 // --------------------------------------------------------------------------
 // API Helpers
@@ -73,22 +77,166 @@ function place(container, nodes) {
 // Toast Notification
 // --------------------------------------------------------------------------
 let toastTimer = null;
-function showToast(message) {
+function showToast(message, variant = "info") {
   const toastEl = $("#app-toast");
   if (!toastEl) return;
   toastEl.textContent = message;
-  toastEl.classList.remove("hide");
+  toastEl.classList.remove("hide", "error", "success");
+  if (variant === "error") toastEl.classList.add("error");
+  if (variant === "success") toastEl.classList.add("success");
   toastEl.classList.add("show");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
     toastEl.classList.remove("show");
     toastEl.classList.add("hide");
-  }, 3500);
+  }, variant === "error" ? 5000 : 3500);
 }
 
 // --------------------------------------------------------------------------
-// View Routing
+// In-App Confirm Modal & Web Settings Modal
 // --------------------------------------------------------------------------
+const confirmModal = $("#confirm-modal");
+const confirmTitleEl = $("#confirm-title");
+const confirmMsgEl = $("#confirm-message");
+const confirmOkBtn = $("#confirm-ok-btn");
+const confirmCancelBtn = $("#confirm-cancel-btn");
+const confirmCloseBtn = $("#confirm-close-btn");
+let confirmResolver = null;
+
+function resolveConfirm(result) {
+  if (!confirmResolver) return;
+  const finish = confirmResolver;
+  confirmResolver = null;
+  confirmModal.hidden = true;
+  finish(result);
+}
+
+function confirmAction({ title = "Confirm Action", message = "", confirmLabel = "Confirm" } = {}) {
+  if (confirmResolver) resolveConfirm(false);
+  confirmTitleEl.textContent = title;
+  confirmMsgEl.textContent = message;
+  confirmOkBtn.textContent = confirmLabel;
+  confirmModal.hidden = false;
+  confirmCancelBtn.focus();
+  return new Promise((resolve) => {
+    confirmResolver = resolve;
+  });
+}
+
+confirmOkBtn.addEventListener("click", () => resolveConfirm(true));
+confirmCancelBtn.addEventListener("click", () => resolveConfirm(false));
+confirmCloseBtn.addEventListener("click", () => resolveConfirm(false));
+confirmModal.addEventListener("click", (e) => {
+  if (e.target === confirmModal) resolveConfirm(false);
+});
+
+const webSettingsModal = $("#web-settings-modal");
+const ENV_TEMPLATE = [
+  "GEMINI_API_KEY=your_api_key_here",
+  "GEMINI_MODEL=gemini-flash-latest",
+  "CLIPS_PER_VIDEO=5",
+  "MIN_CLIP_SECONDS=20",
+  "MAX_CLIP_SECONDS=75",
+  "OUTPUT_HEIGHT=1280",
+  "BURN_CAPTIONS=true",
+  "REFRAME=auto",
+].join("\n");
+
+function renderWebSettingsModal() {
+  const grid = $("#web-settings-grid");
+  const snippet = $("#web-env-snippet");
+  if (!grid) return;
+
+  const h = healthData;
+  const rows = h
+    ? [
+        { label: "Gemini API Key", val: h.gemini ? "Configured" : "Missing in .env", cls: h.gemini ? "ok" : "missing" },
+        { label: "Gemini Model", val: h.model || "gemini-flash-latest" },
+        { label: "Hardware Encoder", val: h.encoder || "auto" },
+        { label: "Reframe Mode", val: h.reframe || "auto" },
+        { label: "FFmpeg", val: h.ffmpeg ? `v${h.ffmpeg}` : "Not found", cls: h.ffmpeg ? "ok" : "missing" },
+        { label: "yt-dlp", val: h.ytDlp || "Not found", cls: h.ytDlp ? "ok" : "missing" },
+        { label: "Face Tracking", val: h.faces || "Unavailable", cls: h.faces ? "ok" : "missing" },
+        {
+          label: "Clip Bounds & Output",
+          val: h.settings
+            ? `${h.settings.clipsPerVideo} clips · ${h.settings.minClipSeconds}–${h.settings.maxClipSeconds}s · ${h.settings.output} · Captions ${h.settings.captions ? "On" : "Off"}`
+            : "Default",
+        },
+        { label: "Output Directory", val: h.outputDir || "output/", full: true },
+      ]
+    : [{ label: "Status", val: "Connecting to local server…", full: true }];
+
+  grid.innerHTML = rows
+    .map(
+      (r) => `
+      <div class="settings-kv${r.full ? " full" : ""}">
+        <span class="settings-kv-label">${esc(r.label)}</span>
+        <span class="settings-kv-val${r.cls ? ` ${r.cls}` : ""}">${esc(r.val)}</span>
+      </div>`
+    )
+    .join("");
+
+  if (snippet) snippet.textContent = ENV_TEMPLATE;
+}
+
+function openWebSettings() {
+  renderWebSettingsModal();
+  webSettingsModal.hidden = false;
+  loadHealth().then(renderWebSettingsModal);
+}
+
+function closeWebSettings() {
+  webSettingsModal.hidden = true;
+}
+
+$("#web-settings-close-btn").addEventListener("click", closeWebSettings);
+$("#web-settings-done-btn").addEventListener("click", closeWebSettings);
+$("#web-settings-refresh-btn").addEventListener("click", async () => {
+  await loadHealth();
+  renderWebSettingsModal();
+  showToast("Engine status refreshed", "success");
+});
+$("#web-settings-copy-btn").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(ENV_TEMPLATE);
+    showToast("Copied .env template to clipboard", "success");
+  } catch {
+    showToast("Could not copy automatically — select text above.", "error");
+  }
+});
+webSettingsModal.addEventListener("click", (e) => {
+  if (e.target === webSettingsModal) closeWebSettings();
+});
+
+// --------------------------------------------------------------------------
+// View Routing & Mobile Drawer
+// --------------------------------------------------------------------------
+const sidebarBackdrop = $("#sidebar-backdrop");
+const mobileMenuBtn = $("#mobile-menu-btn");
+
+function setSidebarOpen(open) {
+  document.body.classList.toggle("sidebar-open", open);
+  if (sidebarBackdrop) sidebarBackdrop.hidden = !open;
+}
+
+if (mobileMenuBtn) {
+  mobileMenuBtn.addEventListener("click", () => {
+    setSidebarOpen(!document.body.classList.contains("sidebar-open"));
+  });
+}
+
+if (sidebarBackdrop) {
+  sidebarBackdrop.addEventListener("click", () => setSidebarOpen(false));
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  if (confirmResolver) resolveConfirm(false);
+  else if (!webSettingsModal.hidden) closeWebSettings();
+  else if (document.body.classList.contains("sidebar-open")) setSidebarOpen(false);
+});
+
 function switchView(viewName) {
   currentView = viewName;
   $$(".sidebar-nav .nav-item").forEach((btn) => {
@@ -97,6 +245,7 @@ function switchView(viewName) {
   $$(".view-panel").forEach((panel) => {
     panel.classList.toggle("active", panel.id === `view-${viewName}`);
   });
+  setSidebarOpen(false);
 
   if (viewName === "library") renderLibrary();
   if (viewName === "analytics") renderAnalytics();
@@ -106,22 +255,17 @@ $$(".sidebar-nav .nav-item").forEach((btn) => {
   btn.addEventListener("click", () => switchView(btn.dataset.view));
 });
 
-// Settings button in sidebar
-$("#open-settings-btn").addEventListener("click", () => {
+function handleOpenSettings() {
+  setSidebarOpen(false);
   if (isElectron && window.electronAPI?.openSettings) {
     window.electronAPI.openSettings();
   } else {
-    showToast("Configure settings in your .env file in CLI mode.");
+    openWebSettings();
   }
-});
+}
 
-$("#preset-edit-btn").addEventListener("click", () => {
-  if (isElectron && window.electronAPI?.openSettings) {
-    window.electronAPI.openSettings();
-  } else {
-    showToast("Open desktop settings to edit resolution & parameters.");
-  }
-});
+$("#open-settings-btn").addEventListener("click", handleOpenSettings);
+$("#preset-edit-btn").addEventListener("click", handleOpenSettings);
 
 // --------------------------------------------------------------------------
 // Studio Hero Form & Batch Drawer
@@ -148,10 +292,10 @@ heroForm.addEventListener("submit", async (e) => {
   try {
     await api("/api/jobs", { method: "POST", body: JSON.stringify({ urls: url }) });
     heroInput.value = "";
-    showToast("⚡ Video added to clipping queue!");
+    showToast("⚡ Video added to clipping queue!", "success");
     await refresh();
   } catch (err) {
-    alert(err.message);
+    showToast(err.message, "error");
   }
 });
 
@@ -163,10 +307,10 @@ $("#batch-submit-btn").addEventListener("click", async () => {
     await api("/api/jobs", { method: "POST", body: JSON.stringify({ urls }) });
     textarea.value = "";
     batchTray.hidden = true;
-    showToast("⚡ Batch queued successfully!");
+    showToast("⚡ Batch queued successfully!", "success");
     await refresh();
   } catch (err) {
-    alert(err.message);
+    showToast(err.message, "error");
   }
 });
 
@@ -416,23 +560,44 @@ function renderLibrary() {
   }
 
   empty.hidden = keptItems.length > 0;
-  grid.innerHTML = "";
 
-  keptItems.forEach(({ job, clip }) => {
-    const card = document.createElement("div");
-    card.className = "library-card";
-    card.innerHTML = `
-      <div class="library-card-title">${esc(clip.title)}</div>
-      <div class="clip-meta-row">
-        <span class="score-badge">⚡ ${esc(clip.score || 0)} / 10</span>
-        <span class="clip-time-pill">${clock(clip.start)}–${clock(clip.end)} (${Math.round(clip.end - clip.start)}s)</span>
-      </div>
-      <div class="library-card-file">📄 ${esc(clip.exportedAs || clip.file || "Exported MP4")}</div>
-      <div class="library-card-actions">
-        <button class="btn-secondary btn-sm" data-action="open-folder">Reveal File</button>
-      </div>`;
-    grid.appendChild(card);
+  const activeKeys = new Set();
+  const nodes = keptItems.map(({ job, clip }) => {
+    const key = `${job.id}/${clip.id}`;
+    activeKeys.add(key);
+    let card = libraryCardEls.get(key);
+    if (!card) {
+      card = document.createElement("div");
+      card.className = "library-card";
+      card.dataset.job = job.id;
+      card.dataset.clip = clip.id;
+      libraryCardEls.set(key, card);
+    }
+
+    const fileLabel = clip.exportedAs || clip.file || "Exported MP4";
+    const sig = `${clip.title}|${clip.score}|${clip.start}|${clip.end}|${fileLabel}`;
+    if (card._sig !== sig) {
+      card.innerHTML = `
+        <div class="library-card-title">${esc(clip.title)}</div>
+        <div class="clip-meta-row">
+          <span class="score-badge">⚡ ${esc(Number(clip.score || 0).toFixed(1))} / 10</span>
+          <span class="clip-time-pill">${clock(clip.start)}–${clock(clip.end)} (${Math.round(clip.end - clip.start)}s)</span>
+        </div>
+        <div class="library-card-file">📄 ${esc(fileLabel)}</div>
+        <div class="library-card-actions">
+          <button class="btn-secondary btn-sm" data-action="open-folder">Reveal File</button>
+        </div>`;
+      card._sig = sig;
+    }
+
+    return card;
   });
+
+  for (const key of libraryCardEls.keys()) {
+    if (!activeKeys.has(key)) libraryCardEls.delete(key);
+  }
+
+  place(grid, nodes);
 }
 
 // Open folder buttons
@@ -475,8 +640,11 @@ function renderAnalytics() {
   $("#metric-tokens").textContent = (u.today.inputTokens + u.today.outputTokens).toLocaleString();
   $("#metric-tokens-sub").textContent = `${u.today.inputTokens.toLocaleString()} in · ${u.today.outputTokens.toLocaleString()} out`;
 
-  // Update sidebar live spend display
-  $("#sidebar-spend").textContent = money(u.today.costUsd);
+  // Update sidebar & mobile live spend display
+  const todaySpend = money(u.today.costUsd);
+  $("#sidebar-spend").textContent = todaySpend;
+  const mobileSpendEl = $("#mobile-spend");
+  if (mobileSpendEl) mobileSpendEl.textContent = todaySpend;
 
   // Table breakdown
   const tbody = $("#analytics-table-body");
@@ -566,36 +734,75 @@ async function handleJobAction(event) {
         method: "POST",
         body: JSON.stringify({ review }),
       });
-      showToast(review === "kept" ? "✓ Clip kept & exported to library" : "Clip review updated");
+      showToast(review === "kept" ? "✓ Clip kept & exported to library" : "Clip review updated", review === "kept" ? "success" : "info");
     } else if (button.dataset.action === "retry") {
       await api(`/api/jobs/${jobId}/retry`, { method: "POST" });
       showToast("Job restarted in queue");
     } else if (button.dataset.action === "delete") {
-      if (!confirm("Remove this video and all its clips? Kept clips in your output folder will stay.")) return;
+      const ok = await confirmAction({
+        title: "Remove video?",
+        message: "Remove this video and all its clips? Any kept clips already exported to your output folder will remain safe.",
+        confirmLabel: "Remove",
+      });
+      if (!ok) return;
       await api(`/api/jobs/${jobId}`, { method: "DELETE" });
       studioJobEls.get(jobId)?.remove();
       studioJobEls.delete(jobId);
       reviewJobEls.get(jobId)?.remove();
       reviewJobEls.delete(jobId);
+      for (const key of clipEls.keys()) {
+        if (key.startsWith(`${jobId}/`)) clipEls.delete(key);
+      }
+      for (const key of libraryCardEls.keys()) {
+        if (key.startsWith(`${jobId}/`)) libraryCardEls.delete(key);
+      }
       showToast("Video removed");
     }
     await refresh();
   } catch (err) {
-    alert(err.message);
+    showToast(err.message, "error");
   }
 }
 
 $("#studio-jobs-list").addEventListener("click", handleJobAction);
 $("#review-jobs-container").addEventListener("click", handleJobAction);
+$("#library-grid").addEventListener("click", handleJobAction);
 
 // --------------------------------------------------------------------------
-// Polling & State Refresh Loop
+// Polling, Connection Health & State Refresh Loop
 // --------------------------------------------------------------------------
 let previouslyActiveJobIds = new Set();
+let refreshTimer = null;
+let refreshInFlight = false;
+let isDisconnected = false;
+
+function setConnectionError(disconnected) {
+  isDisconnected = disconnected;
+  const banner = $("#connection-banner");
+  if (banner) banner.hidden = !disconnected;
+}
+
+function scheduleRefresh() {
+  clearTimeout(refreshTimer);
+  if (document.hidden) return;
+  const hasWork = jobs.some((j) => ACTIVE_STATUSES.has(j.status) || j.status === "queued");
+  const intervalMs = isDisconnected ? 4000 : hasWork ? 2000 : 8000;
+  refreshTimer = setTimeout(() => {
+    void refresh();
+  }, intervalMs);
+}
 
 async function refresh() {
+  if (refreshInFlight) return;
+  refreshInFlight = true;
   try {
     jobs = await api("/api/jobs");
+
+    if (isDisconnected) {
+      setConnectionError(false);
+      loadHealth();
+      loadAnalytics();
+    }
 
     // Check currently active job for the live pipeline visualizer
     const activeJob = jobs.find((j) => ACTIVE_STATUSES.has(j.status));
@@ -609,7 +816,7 @@ async function refresh() {
     // Check if jobs transitioned from active to complete -> trigger notification
     const currentlyActive = new Set(jobs.filter((j) => ACTIVE_STATUSES.has(j.status)).map((j) => j.id));
     if (previouslyActiveJobIds.size > 0 && currentlyActive.size === 0) {
-      showToast("✅ All clips rendered and ready for review!");
+      showToast("✅ All clips rendered and ready for review!", "success");
       if (isElectron && window.electronAPI?.showNotification) {
         window.electronAPI.showNotification("oukos clip", "Your clips are ready for review!");
       }
@@ -617,15 +824,32 @@ async function refresh() {
     previouslyActiveJobIds = currentlyActive;
   } catch (err) {
     console.error("Refresh cycle error:", err);
+    setConnectionError(true);
+  } finally {
+    refreshInFlight = false;
+    scheduleRefresh();
   }
 }
+
+$("#connection-retry-btn").addEventListener("click", () => {
+  void refresh();
+  void loadHealth();
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    clearTimeout(refreshTimer);
+  } else {
+    void refresh();
+    void loadHealth();
+    void loadAnalytics();
+  }
+});
 
 // --------------------------------------------------------------------------
 // Electron Desktop Integration
 // --------------------------------------------------------------------------
 if (isElectron) {
-  document.body.classList.add("electron");
-
   // Intercept external link clicks -> open in OS default browser
   document.addEventListener("click", (e) => {
     const a = e.target.closest("a");
@@ -639,7 +863,7 @@ if (isElectron) {
 
   if (typeof window.electronAPI.onBackendReady === "function") {
     window.electronAPI.onBackendReady(() => {
-      showToast("⚡ Desktop Studio Connected");
+      showToast("⚡ Desktop Studio Connected", "success");
       refresh();
       loadHealth();
       loadAnalytics();
@@ -651,5 +875,6 @@ if (isElectron) {
 loadHealth();
 loadAnalytics();
 refresh();
-setInterval(refresh, 2000);
-setInterval(loadAnalytics, 15000);
+setInterval(() => {
+  if (!document.hidden) void loadAnalytics();
+}, 15000);
